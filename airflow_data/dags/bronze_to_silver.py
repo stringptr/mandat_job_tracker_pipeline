@@ -24,7 +24,7 @@ def parse_adzuna_to_silver(**kwargs):
 
     for job in data.get("results", []):
         insert_query = """
-            INSERT INTO silver.adzuna (
+            INSERT INTO silver.adzuna_raw (
                 id, adref, company_display, title, created, 
                 category_tag, category_label, location_area, location_display, 
                 longitude, latitude, salary_max, salary_min, 
@@ -86,7 +86,7 @@ def parse_linkedin_to_silver(**kwargs):
         posted_at = time_tag["datetime"] if time_tag else None
 
         insert_query = """
-            INSERT INTO silver.linkedin (job_id, url, title, company, location, posted_at)
+            INSERT INTO silver.lindzuna_raw (job_id, url, title, company, location, posted_at)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (job_id) DO NOTHING;
         """
