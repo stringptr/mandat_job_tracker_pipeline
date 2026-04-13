@@ -1,2 +1,6 @@
 .env
 .secret
+__pycache__
+logs
+dragonfly_data
+garage_data/var
