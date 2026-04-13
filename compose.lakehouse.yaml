@@ -1,0 +1,35 @@
+services:
+  garage:
+    image: docker.io/dxflrs/garage:v2.2.0
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${HOST_IP}:3900:3900"
+      - "${HOST_IP}:3901:3901"
+    volumes:
+      - ./garage_data/etc:/etc
+      - ./garage_data/var/lib/garage/meta:/var/lib/garage/meta
+      - ./garage_data/var/lib/garage/data:/var/lib/garage/data
+    networks:
+      - college_ipdb_scrape_dev
+
+  postgres-lakehouse:
+    image: docker.io/postgres:18.3-alpine3.23
+    restart: always
+    env_file: .env
+    ports:
+      - "${HOST_IP}:5432:5432"
+    volumes:
+      - ./postgres_data/silver:/var/lib/postgresql/data:z
+    networks:
+      - college_ipdb_scrape_dev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  college_ipdb_scrape_dev:
+    external: true
