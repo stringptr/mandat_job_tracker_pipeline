@@ -4,9 +4,10 @@ from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from datetime import datetime, timedelta
 import requests
-import pandas as pd
 import os
 import json
+import time
+import math
 
 ADZUNA_APP_ID = os.environ.get("ADZUNA_APP_ID")
 ADZUNA_APP_KEY = os.environ.get("ADZUNA_APP_KEY")
@@ -24,25 +25,49 @@ DEFAULT_ARGS = {
 
 
 def fetch_adzuna(**kwargs):
-    """Fetches data using secured environment credentials."""
     if not ADZUNA_APP_ID or not ADZUNA_APP_KEY:
-        raise ValueError("Missing Adzuna Credentials in Environment Variables!")
+        raise ValueError("Missing Adzuna Credentials!")
+
+    base_url = "https://api.adzuna.com/v1/api/jobs/gb/search"
+    results_per_page = 50  # Maximize each request
+    all_results = []
 
     params = {
         "app_id": ADZUNA_APP_ID,
         "app_key": ADZUNA_APP_KEY,
         "what": "Data Engineer",
-        "max_days_old": 21,
+        "max_days_old": 14,
+        "results_per_page": results_per_page,
     }
 
-    response = requests.get(
-        "https://api.adzuna.com/v1/api/jobs/gb/search/1", params=params
-    )
-    if response.status_code == 200:
-        print("Data fetched successfully using environment keys.")
-        return response.json()
-    else:
-        print("Unknown error happened.")
+    first_response = requests.get(f"{base_url}/1", params=params)
+    if first_response.status_code != 200:
+        return None
+
+    data = first_response.json()
+    total_jobs = data.get("count", 0)
+    total_pages = math.ceil(total_jobs / results_per_page)
+
+    max_pages_to_fetch = min(total_pages, 100)
+
+    print(f"Total jobs found: {total_jobs}. Fetching {max_pages_to_fetch} pages...")
+    all_results.extend(data.get("results", []))
+
+    for page in range(2, max_pages_to_fetch + 1):
+        print(f"Fetching page {page}...")
+        response = requests.get(f"{base_url}/{page}", params=params)
+
+        if response.status_code == 200:
+            page_data = response.json()
+            all_results.extend(page_data.get("results", []))
+        else:
+            print(f"Failed to fetch page {page}")
+            break
+
+        time.sleep(3)
+
+    # Return a structure similar to the original so your Silver DAG doesn't break
+    return {"results": all_results}
 
 
 def scrape_linkedin(**kwargs):

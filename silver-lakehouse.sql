@@ -1,7 +1,9 @@
+\c postgres
+
 CREATE SCHEMA IF NOT EXISTS silver;
 
-CREATE TABLE silver.adzuna(
-  id BIGINT,
+CREATE TABLE silver.adzuna_raw(
+  id BIGINT PRIMARY KEY,
   adref TEXT,
   company_display TEXT,
   title TEXT,
@@ -21,15 +23,14 @@ CREATE TABLE silver.adzuna(
   salary_is_predicted BOOLEAN
 );
 
-CREATE TABLE linkedin(
-  job_id BIGINT,
+CREATE TABLE silver.linkedin_raw(
+  job_id BIGINT PRIMARY KEY,
   url TEXT,
   title TEXT,
   company TEXT,
   location TEXT,
-  posted_at DATETIME
+  posted_at TIMESTAMP
 );
 
-DROP TABLE silver.adzuna;
-DROP TABLE silver.linkedin;
-DROP SCHEMA silver;
+SELECT * FROM silver.adzuna_raw WHERE title ILIKE '%data%engineer%';
+SELECT * FROM silver.linkedin_raw WHERE title ILIKE '%data%engineer%';
